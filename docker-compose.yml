@@ -1,0 +1,11 @@
+version: "3.3"
+
+services:
+  bot:
+    build: .
+    env_file: .env
+    networks:
+      - internal
+
+networks:
+  internal:

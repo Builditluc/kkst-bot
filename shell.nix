@@ -1,9 +1,10 @@
 
 { pkgs ? import <nixpkgs> {} }:
 let
-  python = pkgs.python310;
+  python = pkgs.python39;
   python-with-packages = python.withPackages (p: with p; [
     pip
+    discordpy
   ]);
 in
 pkgs.mkShell {

@@ -1,17 +1,10 @@
-
-{ pkgs ? import <nixpkgs> {} }:
+let pkgs = import <nixpkgs> { };
+in
 let
-  python = pkgs.python310;
-  python-nextcord = ps: ps.callPackage ./python-packages.nix {};
-  python-with-packages = python.withPackages (ps: with ps; [
-    pip
-    (python-nextcord ps)
-  ]);
+  packageOverrides = pkgs.callPackage ./python-packages.nix { };
+  python = pkgs.python39.override { inherit packageOverrides; };
+  pythonWithPackages = python.withPackages (ps: [ ps.nextcord ]);
 in
 pkgs.mkShell {
-  buildInputs = [
-    python-with-packages
-  ];
-  shellHook = "PYTHONPATH=${python-with-packages}/${python-with-packages.sitePackages}";
+  nativeBuildInputs = [ pythonWithPackages ];
 }
-

@@ -1,15 +1,22 @@
-import os
 from typing import List
+from dataclasses import dataclass
+import os
 
 from bot.logging import get_logger
 
 log = get_logger("kkst-bot")
 
 
+@dataclass
+class Role:
+    id: int
+    name: str
+
+
 class Config:
     def __init__(self, _moderator: int, _developer: int, _channel_staff: int, _allowed_guilds: List[int]):
-        self.id_moderator: int = _moderator
-        self.id_developer: int = _developer
+        self.moderator: Role = Role(_moderator, "Moderator")
+        self.developer: Role = Role(_developer, "Developer")
 
         self.channel_staff: int = _channel_staff
 

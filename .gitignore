@@ -1,7 +1,9 @@
 
 src/__pychache__/
+src/bot/__pycache__/
 .envrc
 .direnv/
 
 
 .env
+logs

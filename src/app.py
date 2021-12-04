@@ -1,23 +1,11 @@
-from discord import Client, Message
-import os
-
-TOKEN = os.environ.get("DISCORD_TOKEN", None)
-
-
-class Bot(Client):
-    async def on_ready(self):
-        print(f"Logged on as {self.user}!")
-
-    async def on_message(self, message: Message):
-        if message.author == self:
-            return
-
-        await message.reply("ping!")
+from bot import logging as log
 
 
 def main():
-    client = Bot()
-    client.run(TOKEN)
+    log.init_logging(log.DEBUG)
+
+    root_logger = log.get_logger("kkst-bot")
+    root_logger.info("test")
 
 
 if __name__ == "__main__":

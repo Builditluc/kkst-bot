@@ -24,6 +24,7 @@ class MissingRole(commands.CheckFailure):
         super().__init__(message=f"You can only execute this with the '{role.name}' role! (MISSING_ROLE)")
         log.warn(f"{ctx.author} tried executing a command without the right permissions. missing role: '{role.name}'")
 
+
 class WrongChannel(commands.CheckFailure):
     def __init__(self, ctx: commands.Context, channel_id: int) -> None:
         super().__init__(message="Wrong Channel mate! (WRONG_CHANNEL)")

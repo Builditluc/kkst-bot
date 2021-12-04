@@ -1,11 +1,17 @@
-from bot import logging as log
+from bot.dbot import Bot, init_events
+from bot.logging import init_logging, DEBUG
+import os
+
+TOKEN = os.environ.get("DISCORD_TOKEN")
 
 
 def main():
-    log.init_logging(log.DEBUG)
+    init_logging(DEBUG)
+    bot = Bot(command_prefix="kkst.")
 
-    root_logger = log.get_logger("kkst-bot")
-    root_logger.info("test")
+    init_events(bot)
+
+    bot.run(TOKEN)
 
 
 if __name__ == "__main__":

@@ -43,5 +43,4 @@ def init_logging(level: int):
     ncFileHandler = FileHandler(filename=NEXTCORD_LOG, mode="w")
     ncFileHandler.setFormatter(FORMATTER)
 
-    nc.addHandler(consoleHandler)
     nc.addHandler(ncFileHandler)

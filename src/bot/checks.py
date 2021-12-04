@@ -24,6 +24,11 @@ class MissingRole(commands.CheckFailure):
         super().__init__(message=f"You can only execute this with the '{role.name}' role! (MISSING_ROLE)")
         log.warn(f"{ctx.author} tried executing a command without the right permissions. missing role: '{role.name}'")
 
+class WrongChannel(commands.CheckFailure):
+    def __init__(self, ctx: commands.Context, channel_id: int) -> None:
+        super().__init__(message="Wrong Channel mate! (WRONG_CHANNEL)")
+        log.warn(f"{ctx.author} tired executing a command in the wrong channel. channel: '{ctx.channel.id}' correct_channel: '{channel_id}'")
+
 
 def guild_allowed():
     async def predicate(ctx: commands.Context):
@@ -36,10 +41,20 @@ def guild_allowed():
 
     return commands.check(predicate)
 
+
 def has_role(role: Role):
     async def predicate(ctx: commands.Context):
         if utils.get(ctx.author.roles, id=role.id) is None:
             raise MissingRole(ctx, role)
+        return True
+
+    return commands.check(predicate)
+
+
+def in_channel(channel_id: int):
+    async def predicate(ctx: commands.Context):
+        if ctx.channel.id != channel_id:
+            raise WrongChannel(ctx, channel_id)
         return True
 
     return commands.check(predicate)

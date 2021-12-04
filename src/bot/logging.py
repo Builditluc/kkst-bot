@@ -2,7 +2,7 @@ from logging import (FileHandler, StreamHandler, Formatter, getLogger)
 import os
 import sys
 
-FORMATTER = Formatter("%(asctime)s [%(name)s] [%(levelname)s] %(message)s")
+FORMATTER = Formatter("%(asctime)s [%(module)s] [%(levelname)s] %(message)s")
 LOG_PATH = "logs"
 
 ROOT_LOG = os.path.join(LOG_PATH, "kkst-discord.log")

@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import List
 from datetime import datetime
 from nextcord.embeds import Embed
-from nextcord.emoji import Emoji
 from nextcord.ext import commands
 from nextcord.message import Message
 from nextcord.reaction import Reaction
@@ -10,6 +9,7 @@ from nextcord.reaction import Reaction
 from bot.checks import guild_allowed, has_role
 from bot.config import CONFIG
 from bot.logging import get_logger
+from bot.utils import cleanup
 
 log = get_logger("kkst-bot")
 
@@ -39,7 +39,11 @@ class Exams(commands.Cog):
     async def add_exam(self, ctx: commands.Context, exam_name: str):
         log.info(f"{ctx.author} executed exams.add")
 
-        await ctx.send(f"Okay, let's add {exam_name}!\nPlease send me the date of the exam in this format: 'dd-mm-yyyy'")
+        # Store messages for deletion afterwards
+        messages: List[Message] = []
+
+        msg = await ctx.send(f"Okay, let's add {exam_name}!\nPlease send me the date of the exam in this format: 'dd-mm-yyyy'")
+        messages.append(msg)
 
         def check(message: Message) -> bool:
             if message.author != ctx.author:
@@ -50,34 +54,41 @@ class Exams(commands.Cog):
             except ValueError:
                 return False
 
-        message: Message = await self.bot.wait_for("message", check=check)
-        await message.add_reaction("\u2705")
+        msg: Message = await self.bot.wait_for("message", check=check)
+        messages.append(msg)
+        await msg.add_reaction("\u2705")
 
-        exam_date = datetime.strptime(message.content, "%d-%m-%Y")
+        exam_date = datetime.strptime(msg.content, "%d-%m-%Y")
         exam = Exam(exam_name, exam_date)
 
-        message: Message = await ctx.send(
+        msg: Message = await ctx.send(
             content="Here is a preview of the Exam. Is everything correct?",
             embed=create_embed_from_exam(exam),
         )
-        await message.add_reaction("\u2705")
-        await message.add_reaction("\u274c")
+        messages.append(msg)
+        await msg.add_reaction("\u2705")
+        await msg.add_reaction("\u274c")
 
         def check_reaction(reaction: Reaction, user) -> bool:
             return user == ctx.author and str(reaction.emoji) in ["\u2705", "\u274c"]
 
         reaction, _ = await self.bot.wait_for("reaction_add", check=check_reaction)
         if str(reaction.emoji) == "\u274c":
-            await ctx.send("Hmm, okay. I'll discard that")
+            msg = await ctx.send("Hmm, okay. I'll discard that")
+            messages.append(msg)
             log.debug(f"discarding the exam '{exam_name}'")
-            return
-
+            await ctx.message.add_reaction("\u274c")
+            return await cleanup(messages)
+            
         log.debug(f"creating the exam '{exam_name}'")
         exams.append(exam)
 
         exams_channel = self.bot.get_channel(CONFIG.channel_exams)
         if exams_channel is not None:
             await exams_channel.send(embed=create_embed_from_exam(exam))
+
+        await ctx.message.add_reaction("\u2705")
+        return await cleanup(messages)
 
     @add_exam.error
     async def handle_error(self, ctx: commands.Context, error):

@@ -14,11 +14,12 @@ class Role:
 
 
 class Config:
-    def __init__(self, _moderator: int, _developer: int, _channel_staff: int, _allowed_guilds: List[int]):
+    def __init__(self, _moderator: int, _developer: int, _channel_staff: int, _channel_exams: int, _allowed_guilds: List[int]):
         self.moderator: Role = Role(_moderator, "Moderator")
         self.developer: Role = Role(_developer, "Developer")
 
         self.channel_staff: int = _channel_staff
+        self.channel_exams: int = _channel_exams
 
         self.allowed_guilds: List[int] = _allowed_guilds
 
@@ -31,6 +32,7 @@ class Config:
             _moderator=int(env.get("ID_MODERATOR", -1)),
             _developer=int(env.get("ID_DEVELOPER", -1)),
             _channel_staff=int(env.get("CHANNEL_STAFF", -1)),
+            _channel_exams=int(env.get("CHANNEL_EXAMS", -1)),
             _allowed_guilds=list(map(int, env.get("ALLOWED_GUILDS", "-1").split(" "))),
         )
 

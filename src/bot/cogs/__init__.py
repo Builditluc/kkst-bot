@@ -1,5 +1,6 @@
-from . import info
+from . import info, exams
 
 __all__ = [
-    "info"
+    "info",
+    "exams",
 ]

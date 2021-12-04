@@ -10,6 +10,7 @@ class Bot(commands.Bot):
         super().__init__(command_prefix)
 
         cogs.info.setup(self)
+        cogs.exams.setup(self)
 
 
 def init_events(bot: commands.Bot):

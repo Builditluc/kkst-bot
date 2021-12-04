@@ -6,7 +6,7 @@ from nextcord.ext import commands
 from nextcord.message import Message
 from nextcord.reaction import Reaction
 
-from bot.checks import guild_allowed, has_role
+from bot.checks import guild_allowed, has_role, in_channel
 from bot.config import CONFIG
 from bot.logging import get_logger
 from bot.utils import cleanup
@@ -35,6 +35,7 @@ class Exams(commands.Cog):
 
     @commands.command(name="exams.add")
     @guild_allowed()
+    @in_channel(CONFIG.channel_staff)
     @has_role(CONFIG.moderator)
     async def add_exam(self, ctx: commands.Context, exam_name: str):
         log.info(f"{ctx.author} executed exams.add")

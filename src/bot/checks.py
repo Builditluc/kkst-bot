@@ -1,6 +1,8 @@
 from nextcord.ext import commands
+from nextcord import utils
+
 from bot.logging import get_logger
-from bot.config import CONFIG
+from bot.config import CONFIG, Role
 
 log = get_logger("kkst-bot")
 
@@ -17,6 +19,12 @@ class GuildNotAllowed(commands.CheckFailure):
         log.warn(f"{ctx.author} tried executing a command on a disallowed server. name: '{ctx.guild.name}' id: '{ctx.guild.id}'")
 
 
+class MissingRole(commands.CheckFailure):
+    def __init__(self, ctx: commands.Context, role: Role) -> None:
+        super().__init__(message=f"You can only execute this with the '{role.name}' role! (MISSING_ROLE)")
+        log.warn(f"{ctx.author} tried executing a command without the right permissions. missing role: '{role.name}'")
+
+
 def guild_allowed():
     async def predicate(ctx: commands.Context):
         if ctx.guild is None:
@@ -24,6 +32,14 @@ def guild_allowed():
         if ctx.guild.id not in CONFIG.allowed_guilds:
             raise GuildNotAllowed(ctx)
 
+        return True
+
+    return commands.check(predicate)
+
+def has_role(role: Role):
+    async def predicate(ctx: commands.Context):
+        if utils.get(ctx.author.roles, id=role.id) is None:
+            raise MissingRole(ctx, role)
         return True
 
     return commands.check(predicate)

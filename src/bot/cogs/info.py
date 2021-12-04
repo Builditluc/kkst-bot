@@ -15,8 +15,15 @@ class Info(commands.Cog):
         log.info(f"{ctx.author} executed info.repo")
         await ctx.send("You can find my source code here: https://github.com/builditluc/kkst-bot")
 
+    @commands.command()
+    @guild_allowed()
+    async def hello(self, ctx: commands.Context):
+        log.info(f"{ctx.author} executed info.test")
+        await ctx.send("Hello there...")
+
     @repo.error
-    async def repo_error(self, ctx: commands.Context, error):
+    @hello.error
+    async def handle_error(self, ctx: commands.Context, error):
         await ctx.send(error)
 
 

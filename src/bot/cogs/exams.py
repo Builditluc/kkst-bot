@@ -9,7 +9,7 @@ from nextcord.reaction import Reaction
 from bot.checks import guild_allowed, has_role, in_channel
 from bot.config import CONFIG
 from bot.logging import get_logger
-from bot.utils import cleanup
+from bot.utils import cleanup, wait_for
 
 log = get_logger("kkst-bot")
 
@@ -126,7 +126,41 @@ class Exams(commands.Cog):
         await ctx.message.add_reaction("\u2705")
         return await cleanup(messages)
 
+    @commands.command(name="exams.edit")
+    @in_channel(CONFIG.channel_staff)
+    @has_role(CONFIG.moderator)
+    async def edit_exam(self, ctx: commands.Context, exam_name: str):
+        log.info(f"{ctx.author} executed exams.edit")
+
+        messages = []
+        msg = await ctx.send(f"""
+        Here is the exam '{exam_name}', what do you want to edit?
+
+        1️⃣: Name
+        2️⃣: Date
+        3️⃣: Topics (WIP)
+        """)
+        messages.append(msg)
+
+        for reaction in ["1️⃣", "2️⃣", "3️⃣"]:
+            await msg.add_reaction(reaction)
+
+        def check_reaction(reaction: Reaction, user) -> bool:
+            return user == ctx.author and str(reaction.emoji) in ["1️⃣", "2️⃣", "3️⃣"]
+
+        reaction, _ = await self.bot.wait_for("reaction_add", check=check_reaction)
+
+        msg = await ctx.send("Sorry, that's still in development :/")
+        messages.append(msg)
+
+        await wait_for(seconds=4)
+
+        await ctx.message.add_reaction("\u274c")
+        return await cleanup(messages)
+
     @add_exam.error
+    @remove_exam.error
+    @edit_exam.error
     async def handle_error(self, ctx: commands.Context, error):
         await ctx.send(error)
 

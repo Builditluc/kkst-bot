@@ -1,7 +1,8 @@
 from typing import List
-from datetime import time, timedelta
+from datetime import timedelta
+
+import nextcord.utils as _utils
 from nextcord.message import Message
-from nextcord.utils import utcnow, sleep_until
 
 from bot.logging import get_logger
 
@@ -19,5 +20,5 @@ async def cleanup(messages: List[Message]):
 
 async def wait_for(days=0, seconds=0, microseconds=0):
     log.debug(f"waiting for days: {days} seconds: {seconds} microseconds: {microseconds}")
-    when = utcnow() + timedelta(days, seconds, microseconds)
-    await sleep_until(when)
+    when = _utils.utcnow() + timedelta(days, seconds, microseconds)
+    await _utils.sleep_until(when)

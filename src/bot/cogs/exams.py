@@ -18,6 +18,7 @@ log = get_logger("kkst-bot")
 class Exam():
     name: str
     date: datetime
+    message_id: int
 
 exams: List[Exam] = []
 
@@ -60,7 +61,7 @@ class Exams(commands.Cog):
         await msg.add_reaction("\u2705")
 
         exam_date = datetime.strptime(msg.content, "%d-%m-%Y")
-        exam = Exam(exam_name, exam_date)
+        exam = Exam(exam_name, exam_date, 0)
 
         msg: Message = await ctx.send(
             content="Here is a preview of the Exam. Is everything correct?",
@@ -82,11 +83,45 @@ class Exams(commands.Cog):
             return await cleanup(messages)
             
         log.debug(f"creating the exam '{exam_name}'")
-        exams.append(exam)
 
         exams_channel = self.bot.get_channel(CONFIG.channel_exams)
         if exams_channel is not None:
-            await exams_channel.send(embed=create_embed_from_exam(exam))
+            msg = await exams_channel.send(embed=create_embed_from_exam(exam))
+            exam.message_id = msg.id
+        exams.append(exam)
+
+        await ctx.message.add_reaction("\u2705")
+        return await cleanup(messages)
+    
+    @commands.command(name="exams.del")
+    @in_channel(CONFIG.channel_staff)
+    @has_role(CONFIG.moderator)
+    async def remove_exam(self, ctx: commands.Context, exam_name: str):
+        log.info(f"{ctx.author} executed exams.del")
+
+        messages = []
+        msg = await ctx.send(f"Are you sure that you want to delete the exam '{exam_name}'?")
+        messages.append(msg)
+
+        await msg.add_reaction("\u2705")
+        await msg.add_reaction("\u274c")
+
+        def check_reaction(reaction: Reaction, user) -> bool:
+            return user == ctx.author and str(reaction.emoji) in ["\u2705", "\u274c"]
+
+        reaction, _ = await self.bot.wait_for("reaction_add", check=check_reaction)
+        if str(reaction.emoji) == "\u274c":
+            await ctx.message.add_reaction("\u274c")
+            return await cleanup(messages)
+
+        log.debug(f"removing the exam '{exam_name}'")
+        for exam in exams:
+            if exam.name == exam_name:
+                exams_channel = self.bot.get_channel(CONFIG.channel_exams)
+                if exams_channel is not None:
+                    msg = await exams_channel.fetch_message(exam.message_id)
+                    messages.append(msg)
+                break
 
         await ctx.message.add_reaction("\u2705")
         return await cleanup(messages)

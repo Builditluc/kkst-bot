@@ -7,7 +7,6 @@ from nextcord.message import Message
 from nextcord.reaction import Reaction
 
 from bot.checks import guild_allowed, has_role, in_channel
-from bot.cogs.utils import Utils
 from bot.config import CONFIG
 from bot.logging import get_logger
 from bot.utils import cleanup, wait_for

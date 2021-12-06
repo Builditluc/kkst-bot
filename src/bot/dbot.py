@@ -11,9 +11,10 @@ class Bot(commands.Bot):
 
         cogs.info.setup(self)
         cogs.exams.setup(self)
+        cogs.utils.setup(self)
 
 
 def init_events(bot: commands.Bot):
     @bot.event
     async def on_ready():
-        log.info(f"Logged on as {bot.owner_id}")
+        log.info(f"Logged on as {bot.user.name} {bot.user.id}")

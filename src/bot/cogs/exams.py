@@ -7,6 +7,7 @@ from nextcord.message import Message
 from nextcord.reaction import Reaction
 
 from bot.checks import guild_allowed, has_role, in_channel
+from bot.cogs.utils import Utils
 from bot.config import CONFIG
 from bot.logging import get_logger
 from bot.utils import cleanup, wait_for
@@ -142,13 +143,8 @@ class Exams(commands.Cog):
         """)
         messages.append(msg)
 
-        for reaction in ["1️⃣", "2️⃣", "3️⃣"]:
-            await msg.add_reaction(reaction)
-
-        def check_reaction(reaction: Reaction, user) -> bool:
-            return user == ctx.author and str(reaction.emoji) in ["1️⃣", "2️⃣", "3️⃣"]
-
-        reaction, _ = await self.bot.wait_for("reaction_add", check=check_reaction)
+        utils_cog = self.bot.get_cog("utils")
+        await utils_cog.get_reaction(msg, ["1️⃣", "2️⃣", "3️⃣"], ctx.author)
 
         msg = await ctx.send("Sorry, that's still in development :/")
         messages.append(msg)

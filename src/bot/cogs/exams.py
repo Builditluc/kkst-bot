@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, cast
 from datetime import datetime
+from nextcord.channel import TextChannel
 from nextcord.embeds import Embed
 from nextcord.ext import commands
 from nextcord.message import Message
@@ -10,6 +11,7 @@ from bot.checks import guild_allowed, has_role, in_channel
 from bot.config import CONFIG
 from bot.logging import get_logger
 from bot.utils import cleanup, wait_for
+from bot.cogs.utils import Utils
 
 log = get_logger("kkst-bot")
 
@@ -119,7 +121,7 @@ class Exams(commands.Cog):
             if exam.name == exam_name:
                 exams_channel = self.bot.get_channel(CONFIG.channel_exams)
                 if exams_channel is not None:
-                    msg = await exams_channel.fetch_message(exam.message_id)
+                    msg = await cast(TextChannel, exams_channel).fetch_message(exam.message_id)
                     messages.append(msg)
                 break
 
@@ -142,10 +144,10 @@ class Exams(commands.Cog):
         """)
         messages.append(msg)
 
-        utils_cog = self.bot.get_cog("utils")
+        utils_cog = cast(Utils, self.bot.get_cog("utils"))
         await utils_cog.get_reaction(msg, ["1️⃣", "2️⃣", "3️⃣"], ctx.author)
 
-        msg = await ctx.send("Sorry, that's still in development :/")
+        msg: Message = await ctx.send("Sorry, that's still in development :/")
         messages.append(msg)
 
         await wait_for(seconds=4)

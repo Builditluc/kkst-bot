@@ -13,6 +13,8 @@ from bot.logging import get_logger
 from bot.utils import cleanup, wait_for
 from bot.cogs.utils import Utils
 
+import emote
+
 log = get_logger("kkst-bot")
 
 # TODO: move this when we have a database set up
@@ -145,7 +147,7 @@ class Exams(commands.Cog):
         messages.append(msg)
 
         utils_cog = cast(Utils, self.bot.get_cog("utils"))
-        await utils_cog.get_reaction(msg, ["1️⃣", "2️⃣", "3️⃣"], ctx.author)
+        await utils_cog.get_reaction(msg, list(emote.NUMBERS.values()), ctx.author)
 
         msg: Message = await ctx.send("Sorry, that's still in development :/")
         messages.append(msg)

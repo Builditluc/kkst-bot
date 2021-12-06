@@ -1,15 +1,21 @@
 from typing import Dict
 from dataclasses import dataclass
+
 from nextcord.partial_emoji import PartialEmoji
+from nextcord.reaction import Reaction
 
 @dataclass
 class Emote:
     unicode: str
 
+    @property
     def emoji(self) -> PartialEmoji:
         return PartialEmoji(name=self.unicode)
 
     def __eq__(self, other: object) -> bool:
+        if isinstance(other, Reaction):
+            return str(other.emoji) == self.unicode
+
         return super().__eq__(other)
 
 

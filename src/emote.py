@@ -12,6 +12,9 @@ class Emote:
     def emoji(self) -> PartialEmoji:
         return PartialEmoji(name=self.unicode)
 
+    def __str__(self) -> str:
+        return self.unicode
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Reaction):
             return str(other.emoji) == self.unicode

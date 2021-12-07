@@ -5,7 +5,6 @@ from nextcord.channel import TextChannel
 from nextcord.embeds import Embed
 from nextcord.ext import commands
 from nextcord.message import Message
-from nextcord.reaction import Reaction
 
 from bot.checks import guild_allowed, has_role, in_channel
 from bot.config import CONFIG
@@ -62,7 +61,7 @@ class Exams(commands.Cog):
 
         msg: Message = await self.bot.wait_for("message", check=check)
         messages.append(msg)
-        await msg.add_reaction("\u2705")
+        await msg.add_reaction(emote.CHECK["white_check_mark"].emoji)
 
         exam_date = datetime.strptime(msg.content, "%d-%m-%Y")
         exam = Exam(exam_name, exam_date, 0)
@@ -72,18 +71,15 @@ class Exams(commands.Cog):
             embed=create_embed_from_exam(exam),
         )
         messages.append(msg)
-        await msg.add_reaction("\u2705")
-        await msg.add_reaction("\u274c")
 
-        def check_reaction(reaction: Reaction, user) -> bool:
-            return user == ctx.author and str(reaction.emoji) in ["\u2705", "\u274c"]
+        utils_cog = cast(Utils, self.bot.get_cog("utils"))
+        reaction = await utils_cog.get_reaction(msg, list(emote.CHECK.values()), ctx.author)
 
-        reaction, _ = await self.bot.wait_for("reaction_add", check=check_reaction)
-        if str(reaction.emoji) == "\u274c":
+        if reaction == 1:
             msg = await ctx.send("Hmm, okay. I'll discard that")
             messages.append(msg)
             log.debug(f"discarding the exam '{exam_name}'")
-            await ctx.message.add_reaction("\u274c")
+            await ctx.message.add_reaction(emote.CHECK["x"].emoji)
             return await cleanup(messages)
             
         log.debug(f"creating the exam '{exam_name}'")
@@ -94,7 +90,7 @@ class Exams(commands.Cog):
             exam.message_id = msg.id
         exams.append(exam)
 
-        await ctx.message.add_reaction("\u2705")
+        await ctx.message.add_reaction(emote.CHECK["white_check_mark"].emoji)
         return await cleanup(messages)
     
     @commands.command(name="exams.del")
@@ -107,15 +103,11 @@ class Exams(commands.Cog):
         msg = await ctx.send(f"Are you sure that you want to delete the exam '{exam_name}'?")
         messages.append(msg)
 
-        await msg.add_reaction("\u2705")
-        await msg.add_reaction("\u274c")
+        utils_cog = cast(Utils, self.bot.get_cog("utils"))
+        reaction = await utils_cog.get_reaction(msg, list(emote.CHECK.values()), ctx.author)
 
-        def check_reaction(reaction: Reaction, user) -> bool:
-            return user == ctx.author and str(reaction.emoji) in ["\u2705", "\u274c"]
-
-        reaction, _ = await self.bot.wait_for("reaction_add", check=check_reaction)
-        if str(reaction.emoji) == "\u274c":
-            await ctx.message.add_reaction("\u274c")
+        if reaction == 1:
+            await ctx.message.add_reaction(emote.CHECK["x"].emoji)
             return await cleanup(messages)
 
         log.debug(f"removing the exam '{exam_name}'")
@@ -127,7 +119,7 @@ class Exams(commands.Cog):
                     messages.append(msg)
                 break
 
-        await ctx.message.add_reaction("\u2705")
+        await ctx.message.add_reaction(emote.CHECK["white_check_mark"].emoji)
         return await cleanup(messages)
 
     @commands.command(name="exams.edit")
@@ -137,24 +129,29 @@ class Exams(commands.Cog):
         log.info(f"{ctx.author} executed exams.edit")
 
         messages = []
+        select_options = [
+            emote.NUMBERS["one"],
+            emote.NUMBERS["two"],
+            emote.NUMBERS["three"],
+        ]
         msg = await ctx.send(f"""
         Here is the exam '{exam_name}', what do you want to edit?
 
-        1️⃣: Name
-        2️⃣: Date
-        3️⃣: Topics (WIP)
+        {select_options[0]}: Name
+        {select_options[1]}: Date
+        {select_options[2]}: Topics (WIP)
         """)
         messages.append(msg)
 
         utils_cog = cast(Utils, self.bot.get_cog("utils"))
-        await utils_cog.get_reaction(msg, list(emote.NUMBERS.values()), ctx.author)
+        await utils_cog.get_reaction(msg, select_options, ctx.author)
 
         msg: Message = await ctx.send("Sorry, that's still in development :/")
         messages.append(msg)
 
         await wait_for(seconds=4)
 
-        await ctx.message.add_reaction("\u274c")
+        await ctx.message.add_reaction(emote.CHECK["x"].emoji)
         return await cleanup(messages)
 
     @add_exam.error

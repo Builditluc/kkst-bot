@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, cast
+from typing import List, Tuple, Union, cast
 from datetime import datetime
 from nextcord.channel import TextChannel
 from nextcord.embeds import Embed
@@ -14,9 +14,12 @@ from bot.cogs.utils import Utils
 
 import emote
 
+
+# TODO: create __all__
+
 log = get_logger("kkst-bot")
 
-# TODO: move this when we have a database set up
+# TODO: replace this with database interface later
 @dataclass
 class Exam():
     name: str
@@ -47,23 +50,13 @@ class Exams(commands.Cog):
         # Store messages for deletion afterwards
         messages: List[Message] = []
 
-        msg = await ctx.send(f"Okay, let's add {exam_name}!\nPlease send me the date of the exam in this format: 'dd-mm-yyyy'")
+        msg = await ctx.send(f"Okay, let's add {exam_name}!")
         messages.append(msg)
 
-        def check(message: Message) -> bool:
-            if message.author != ctx.author:
-                return False
-            try:
-                datetime.strptime(message.content, "%d-%m-%Y")
-                return True
-            except ValueError:
-                return False
+        utils_cog = cast(Utils, self.bot.get_cog("utils"))
+        exam_date, msgs = await utils_cog.get_date(ctx, past_allowed=False)
+        messages.extend(msgs)
 
-        msg: Message = await self.bot.wait_for("message", check=check)
-        messages.append(msg)
-        await msg.add_reaction(emote.CHECK["white_check_mark"].emoji)
-
-        exam_date = datetime.strptime(msg.content, "%d-%m-%Y")
         exam = Exam(exam_name, exam_date, 0)
 
         msg: Message = await ctx.send(
@@ -129,13 +122,28 @@ class Exams(commands.Cog):
         log.info(f"{ctx.author} executed exams.edit")
 
         messages = []
+
+        exam: Union[Exam, None] = None
+
+        for _exam in exams:
+            if _exam.name == exam_name:
+                exam = _exam
+                break
+
+        if exam is None:
+            msg = await ctx.send(f"I couldn't find the exam '{exam_name}'")
+            messages.append(msg)
+
+            await ctx.message.add_reaction(emote.CHECK["x"].emoji)
+            return await cleanup(messages)
+
         select_options = [
             emote.NUMBERS["one"],
             emote.NUMBERS["two"],
             emote.NUMBERS["three"],
         ]
         msg = await ctx.send(f"""
-        Here is the exam '{exam_name}', what do you want to edit?
+        Here is the exam '{exam.name}', what do you want to edit?
 
         {select_options[0]}: Name
         {select_options[1]}: Date
@@ -144,15 +152,52 @@ class Exams(commands.Cog):
         messages.append(msg)
 
         utils_cog = cast(Utils, self.bot.get_cog("utils"))
-        await utils_cog.get_reaction(msg, select_options, ctx.author)
+        reaction: int = await utils_cog.get_reaction(msg, select_options, ctx.author)
 
-        msg: Message = await ctx.send("Sorry, that's still in development :/")
-        messages.append(msg)
+        if reaction == 0:
+            is_error = self._edit_exam_name(ctx, exam)
+            if not is_error:
+                await ctx.message.add_reaction(emote.CHECK["white_check_mark"].emoji)
+                return await cleanup(messages)
 
-        await wait_for(seconds=4)
+        elif reaction == 1:
+            is_error = self._edit_exam_name(ctx, exam)
+            if not is_error:
+                await ctx.message.add_reaction(emote.CHECK["white_check_mark"].emoji)
+                return await cleanup(messages)
+
+        elif reaction == 2:
+            msg: Message = await ctx.send("Sorry, that's still in development :/")
+            messages.append(msg)
+
+            await wait_for(seconds=4)
 
         await ctx.message.add_reaction(emote.CHECK["x"].emoji)
         return await cleanup(messages)
+
+    async def _edit_exam_name(self, ctx: commands.Context, exam: Exam) -> Tuple[bool, List[Message]]:
+        messages: List[Message] = []
+
+        # TODO: use helper function to get the new name
+        msg = await ctx.send("Please enter a new name")
+        messages.append(msg)
+        def check(message: Message) -> bool:
+            return message.author == ctx.author
+
+        name = await self.bot.wait_for("message", check=check)
+
+        # TODO: find a better way to do this / move this into a function
+        for i, _exam in enumerate(exams):
+            if _exam.message_id == exam.message_id:
+                exams[i].name = name
+                return (True, messages)
+
+        return (False, messages)
+
+
+    async def _edit_exam_date(self, ctx: commands.Context, exam: Exam) -> Tuple[bool, List[Message]]:
+        # TODO: implement Exams._edit_exam_name
+        return (False, [])
 
     @add_exam.error
     @remove_exam.error

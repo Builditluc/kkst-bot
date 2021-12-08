@@ -1,6 +1,9 @@
 from bot.dbot import Bot, init_events
 from bot.logging import init_logging, DEBUG
+import db.interface
 import os
+
+# TODO: create __all__
 
 TOKEN = os.environ.get("DISCORD_TOKEN")
 

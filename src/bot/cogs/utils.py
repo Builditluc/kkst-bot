@@ -57,6 +57,7 @@ class Utils(commands.Cog, name="utils"):
         log.info(f"wating for a message from {ctx.author} in the channel {ctx.channel}")
         try:
             message_input: Message = await self.bot.wait_for("message", check=check, timeout=TIMEOUT)
+            messages.append(message_input)
         except asyncio.TimeoutError:
             msg = await ctx.send("You took to long to respond (TIMEOUT)")
             log.info(f"aborting command from {ctx.author} because TIMEOUT")

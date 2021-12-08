@@ -57,6 +57,10 @@ class Exams(commands.Cog):
         exam_date, msgs = await utils_cog.get_date(ctx, past_allowed=False)
         messages.extend(msgs)
 
+        if exam_date is None: 
+            await ctx.message.add_reaction(emote.CHECK["x"].emoji)
+            return await cleanup(messages)
+
         exam = Exam(exam_name, exam_date, 0)
 
         msg: Message = await ctx.send(
@@ -66,7 +70,12 @@ class Exams(commands.Cog):
         messages.append(msg)
 
         utils_cog = cast(Utils, self.bot.get_cog("utils"))
-        reaction = await utils_cog.get_reaction(msg, list(emote.CHECK.values()), ctx.author)
+        reaction, msgs = await utils_cog.get_reaction(ctx, msg, list(emote.CHECK.values()), ctx.author)
+        messages.extend(msgs)
+
+        if reaction is None:
+            await ctx.message.add_reaction(emote.CHECK["x"].emoji)
+            return await cleanup(messages)
 
         if reaction == 1:
             msg = await ctx.send("Hmm, okay. I'll discard that")
@@ -97,7 +106,12 @@ class Exams(commands.Cog):
         messages.append(msg)
 
         utils_cog = cast(Utils, self.bot.get_cog("utils"))
-        reaction = await utils_cog.get_reaction(msg, list(emote.CHECK.values()), ctx.author)
+        reaction, msgs = await utils_cog.get_reaction(ctx, msg, list(emote.CHECK.values()), ctx.author)
+        messages.extend(msgs)
+
+        if reaction is None:
+            await ctx.message.add_reaction(emote.CHECK["x"].emoji)
+            return await cleanup(messages)
 
         if reaction == 1:
             await ctx.message.add_reaction(emote.CHECK["x"].emoji)
@@ -152,9 +166,14 @@ class Exams(commands.Cog):
         messages.append(msg)
 
         utils_cog = cast(Utils, self.bot.get_cog("utils"))
-        reaction: int = await utils_cog.get_reaction(msg, select_options, ctx.author)
+        reaction, msgs = await utils_cog.get_reaction(ctx, msg, select_options, ctx.author)
+        messages.extend(msgs)
 
-        if reaction == 0:
+        if reaction is None:
+            await ctx.message.add_reaction(emote.CHECK["x"].emoji)
+            return await cleanup(messages)
+
+        elif reaction == 0:
             is_error = self._edit_exam_name(ctx, exam)
             if not is_error:
                 await ctx.message.add_reaction(emote.CHECK["white_check_mark"].emoji)

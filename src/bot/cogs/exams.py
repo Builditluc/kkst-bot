@@ -147,7 +147,9 @@ class Exams(commands.Cog):
         if exam is None:
             msg = await ctx.send(f"I couldn't find the exam '{exam_name}'")
             messages.append(msg)
+            log.error(f"Exam '{exam_name}' was not found")
 
+            await wait_for(seconds=2)
             await ctx.message.add_reaction(emote.CHECK["x"].emoji)
             return await cleanup(messages)
 
@@ -174,14 +176,16 @@ class Exams(commands.Cog):
             return await cleanup(messages)
 
         elif reaction == 0:
-            is_error = self._edit_exam_name(ctx, exam)
-            if not is_error:
+            is_error, msgs = await self._edit_exam_name(ctx, exam)
+            messages.extend(msgs)
+            if is_error is True:
                 await ctx.message.add_reaction(emote.CHECK["white_check_mark"].emoji)
                 return await cleanup(messages)
 
         elif reaction == 1:
-            is_error = self._edit_exam_name(ctx, exam)
-            if not is_error:
+            is_error, msgs = await self._edit_exam_date(ctx, exam)
+            messages.extend(msgs)
+            if is_error is True:
                 await ctx.message.add_reaction(emote.CHECK["white_check_mark"].emoji)
                 return await cleanup(messages)
 
@@ -203,20 +207,58 @@ class Exams(commands.Cog):
         def check(message: Message) -> bool:
             return message.author == ctx.author
 
-        name = await self.bot.wait_for("message", check=check)
+        name_message = await self.bot.wait_for("message", check=check)
+        messages.append(name_message)
 
         # TODO: find a better way to do this / move this into a function
         for i, _exam in enumerate(exams):
             if _exam.message_id == exam.message_id:
-                exams[i].name = name
+                exams[i].name = name_message.content
+
+                is_error = await self._update_exam(_exam)
+                if is_error:
+                    break
+
                 return (True, messages)
 
         return (False, messages)
 
-
     async def _edit_exam_date(self, ctx: commands.Context, exam: Exam) -> Tuple[bool, List[Message]]:
         # TODO: implement Exams._edit_exam_name
-        return (False, [])
+        messages: List[Message] = []
+
+        utils_cog = cast(Utils, self.bot.get_cog("utils"))
+        date, msgs = await utils_cog.get_date(ctx, past_allowed=False)
+        messages.extend(msgs)
+
+        if date is None:
+            return (False, messages)
+
+        for i, _exam in enumerate(exams):
+            if _exam.message_id == exam.message_id:
+                exams[i].date = date
+
+                is_error = await self._update_exam(_exam)
+                if is_error:
+                    break
+
+                return (True, messages)
+
+        return (False, messages)
+
+    async def _update_exam(self, exam: Exam) -> bool:
+        log.debug(f"updating the exam '{exam}'")
+
+        exams_channel = self.bot.get_channel(CONFIG.channel_exams)
+        if exams_channel is None:
+            return True
+
+        exam_message = exams_channel.get_partial_message(exam.message_id)
+        exam_message = await exam_message.edit(embed=create_embed_from_exam(exam))
+        if exam_message is None:
+            return True
+
+        return False
 
     @add_exam.error
     @remove_exam.error

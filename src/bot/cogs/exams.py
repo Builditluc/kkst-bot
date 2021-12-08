@@ -201,19 +201,17 @@ class Exams(commands.Cog):
     async def _edit_exam_name(self, ctx: commands.Context, exam: Exam) -> Tuple[bool, List[Message]]:
         messages: List[Message] = []
 
-        # TODO: use helper function to get the new name
-        msg = await ctx.send("Please enter a new name")
-        messages.append(msg)
-        def check(message: Message) -> bool:
-            return message.author == ctx.author
+        utils_cog = cast(Utils, self.bot.get_cog("utils"))
+        name, msgs = await utils_cog.get_string(ctx, "Please enter a new name:")
+        messages.extend(msgs)
 
-        name_message = await self.bot.wait_for("message", check=check)
-        messages.append(name_message)
+        if name is None:
+            return (False, messages)
 
         # TODO: find a better way to do this / move this into a function
         for i, _exam in enumerate(exams):
             if _exam.message_id == exam.message_id:
-                exams[i].name = name_message.content
+                exams[i].name = name
 
                 is_error = await self._update_exam(_exam)
                 if is_error:

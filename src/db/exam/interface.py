@@ -47,8 +47,8 @@ class ExamInterface(DatabaseInterface):
     def removeExam(self, name: str):
         log.info(f"Removing the exam {name=} from the database")
         exam_id = self.get(f"name='{name}'")[0][0]
-        self.remove(f"name='{name}'")
         self.topicInterface.remove(f"exam_id={exam_id}")
+        self.remove(f"name='{name}'")
 
     def getExam(self, name: str) -> Optional[Exam]:
         log.info(f"Fetching the exam {name=} from the database")
@@ -59,7 +59,7 @@ class ExamInterface(DatabaseInterface):
         topics: List[ExamTopic] = []
         for raw_topic in raw_topics:
             topics.append(
-                ExamTopic(title=raw_topic[0], content=raw_topic[2].splitlines())
+                ExamTopic(title=raw_topic[0], content=raw_topic[3].splitlines())
             )
         log.debug(f"Topics for the exam '{exams[0]}': {topics=}")
         return Exam(
